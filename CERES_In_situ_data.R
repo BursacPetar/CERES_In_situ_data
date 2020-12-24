@@ -129,7 +129,10 @@ v_poly <- st_cast(voronoi_grid) %>%
 
 v_poly %<>% dplyr::select(field_2, field_8) %>% dplyr::rename(Naziv = field_2, code = field_8)
 
-plot(v_poly)
+
+ggplot()+
+  geom_sf(data = v_poly, aes(fill = code))
+
 
 mapview(v_poly)
 # Žednik npr pronalzi kod Sombora a u podacima je Žednik opština Subotica
