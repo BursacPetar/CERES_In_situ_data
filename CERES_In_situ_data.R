@@ -87,11 +87,11 @@ mapview(geonames)
 
 # LCTY	locality	a minor area or place of unspecified or mixed character and indefinite boundaries
 
-geonames_ostalo <- geonames %>% dplyr::filter(field_8 != "LCTY")
-geonames_loc <- geonames %>% dplyr::filter(field_8 == "LCTY")
+#geonames_ostalo <- geonames %>% dplyr::filter(field_8 != "LCTY")
+#geonames_loc <- geonames %>% dplyr::filter(field_8 == "LCTY")
 
 # P city, village,...
-geonames_ppl <- geonames %>% dplyr::filter(., grepl("PPL", field_8, fixed = TRUE))
+#geonames_ppl <- geonames %>% dplyr::filter(., grepl("PPL", field_8, fixed = TRUE))
 
 # Objedinjeno
 geonames_names <- geonames %>% dplyr::filter(field_8 == "LCTY" | grepl("PPL", field_8, fixed = TRUE)) %>% 
@@ -100,7 +100,7 @@ geonames_names <- geonames %>% dplyr::filter(field_8 == "LCTY" | grepl("PPL", fi
 
 
 # Voronoi tesselation for each element of the list
-voronoi_grids_lst <- lapply(points_lst, st_voronoi)
+#voronoi_grids_lst <- lapply(points_lst, st_voronoi)
 
 # Voronoi - Thiessen polygons
 geonames_names_32634 <- st_transform(geonames_names, 32634)
@@ -121,13 +121,18 @@ voronoi_grid <- geonames_names_32634 %>%
 
 plot(voronoi_grid)
 
-
+# final 
 v_poly <- st_cast(voronoi_grid) %>% 
   st_intersection(srb_granica) %>%
   st_sf() %>% 
   st_join(geonames_names_32634, join = st_contains) #za preklop sa tackama
 
 v_poly %<>% dplyr::select(field_2, field_8) %>% dplyr::rename(Naziv = field_2, code = field_8)
+
+
+ggplot()+
+  geom_sf(data = v_poly, aes(fill = code))
+
 
 mapview(v_poly)
 # Žednik npr pronalzi kod Sombora a u podacima je Žednik opština Subotica
