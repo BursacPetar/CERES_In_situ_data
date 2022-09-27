@@ -532,6 +532,20 @@ pts_j %<>% dplyr::mutate(Bolest_lat = unlist(Bolest_lat))
 
 # st_write(pts_p, "Data/bolesti/psenica_tac.gpkg")
 # st_write(pts_j, "Data/bolesti/jabuka_tac.gpkg")
+
+
+pts_p <- st_read("Data/bolesti/psenica_tac.gpkg")
+pts_j <- st_read("Data/bolesti/jabuka_tac.gpkg")
+
+firstup <- function(x) {
+  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+  x
+}
+
+pts_p %<>% dplyr::mutate(Bolest_lat = firstup(Bolest_lat))
+pts_j %<>% dplyr::mutate(Bolest_lat = firstup(Bolest_lat))
+
+
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
