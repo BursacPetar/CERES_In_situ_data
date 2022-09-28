@@ -696,3 +696,97 @@ ggsave(plot = map12,
        units = "cm",
        device = "jpeg",
        dpi = 700)
+
+
+# Grad - karta
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+grad_data <- readxl::read_xlsx(path = "Data/grad/grad.xlsx", col_names = FALSE) %>% 
+  as.data.frame()
+
+grad_data %<>% dplyr::rename(Datum = `...1`, Lokacija = "...2")
+
+grad_data %<>% dplyr::mutate(Godina = str_sub(Datum, -5, -2))
+
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+geonames <- sf::st_read(dsn = "Data/geonames/GeoNames_SRB.gpkg")
+geonames_names <- geonames %>% dplyr::filter(field_8 == "LCTY" | grepl("PPL", field_8, fixed = TRUE)) %>% 
+  dplyr::filter(field_2 != "Rusulijske Ravnine")
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+all(grad_data$Lokacija %in% geonames_names$field_2)
+grad_data %>% dplyr::filter(!(Lokacija %in% geonames_names$field_2))
+
+
+grad_data$Lokacija[grad_data$Lokacija == "Raški okrug"] <- "Raška"
+grad_data$Lokacija[grad_data$Lokacija == "Beograd"] <- "Stari Grad"
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# field_5 = lat  field_6 = lat
+grad_data$lat <- geonames_names$field_5[match(grad_data$Lokacija, geonames_names$field_2)]
+grad_data$lon <- geonames_names$field_6[match(grad_data$Lokacija, geonames_names$field_2)]
+
+grad_data_dup <- grad_data %>% 
+  add_count(Lokacija) %>% #add new column that has the frequency counts. Non duplicate will have n=1
+  filter(n>1) %>%  # remove non duplicates
+  select(-n)
+
+runif(length(grad_data_dup$Lokacija), min = 0.00800, 0.00900)
+
+grad_data_dup %<>% dplyr::mutate(lat = lat + runif(length(grad_data_dup$Lokacija),  min = 0.1, max = 0.5),
+                                 lon = lon + runif(length(grad_data_dup$Lokacija),  min = 0.1, max = 0.5))
+
+
+grad_data_non_dup <- grad_data %>% 
+  add_count(Lokacija) %>% #add new column that has the frequency counts. Non duplicate will have n=1
+  filter(n==1) %>%  # remove non duplicates
+  select(-n)
+
+grad_data_full <- rbind(grad_data_dup, grad_data_non_dup)
+
+
+grad_sf <- st_as_sf(grad_data_full, coords = c("lon", "lat"), crs = 4326)
+mapview(grad_sf)
+
+
+
+paln <- viridisLite::turbo(length(unique(grad_sf$Godina)), direction = 1)
+
+map12 <- ggplot() +
+  geom_sf(data = sf_opstine, color = "black", fill = NA) +
+  geom_sf(data = grad_sf,
+          aes(color = factor(Godina)), size = 3.5, show.legend = "point") +
+  scale_color_manual(values = paln,
+                     name = "Year of hail occurence: ", 
+                     guide = guide_legend(override.aes = list(size = 3.5))) +
+  labs(subtitle = "HAIL occurence") +
+  
+  theme(panel.grid = element_line(color = "black"),
+        panel.background = element_rect(fill = "white"),
+        axis.text.x = element_text(colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        legend.position = "right")+
+  # geom_sf(data = sf_opstine, color = "black", fill = NA) +
+  # geom_sf(data = cbound_c12, color = "red", fill = NA) +
+  annotation_north_arrow(location = "tr", which_north = "true",
+                         pad_x = unit(0.5, "in"), pad_y = unit(0.5, "in"),
+                         style = north_arrow_fancy_orienteering)+
+  coord_sf(crs = 4326)+
+  my_theme() +
+  theme(legend.position = "right") +
+  guides(size=FALSE, alpha = FALSE) +
+  theme(plot.subtitle=element_text(size = 14, face = "bold", color = "black"))
+
+map12
+
+
+ggsave(plot = map12,
+       filename = "Data/grad/Maps/Hail_occurence.jpg",
+       width = 45,
+       height = 30,
+       units = "cm",
+       device = "jpeg",
+       dpi = 700)
